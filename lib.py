@@ -1,8 +1,20 @@
 """Project on the collaboration with Alex"""
 import numpy as np
+import panda as pd #Panda library used to handle Alex Data
+import os
+import h5py
 import matplotlib.pyplot as plt
 import unittest
 from traits.api import HasTraits, Float, Function, Array, List, Int, Dict
+
+project_name = "Berdi2014"
+
+def import_data_berdi():
+    path = "~/Data/" + project_name + "/"
+    os.chdir(path) #Change of directory
+    for fname in os.dirlist(path):
+        with open(fname) as f:
+            pd.read_csv(f)
 
 def stimulus(duration, probability):
     """Generate a stimulus of length duration"""
