@@ -1,6 +1,6 @@
 """Project on the collaboration with Alex"""
 import numpy as np
-import panda as pd #Panda library used to handle Alex Data
+import pandas as pd #Panda library used to handle Alex Data
 import os
 import h5py
 import matplotlib.pyplot as plt
@@ -36,6 +36,114 @@ class TestGeneratingStimulus(unittest.TestCase):
         test_stim = stimulus(duration, self.probability)
         #Then
         self.assertAlmostEqual(np.mean(test_stim), probability, 1)
+
+
+def analysis(L, G, n_chunks=10):
+    #Split the vectors into n_chunks
+    G_split = np.array_split(G, n_chunks)
+    L_split = np.array_split(L, n_chunks)
+    spe = np.zeros(n_chunks)
+    sen = np.zeros(n_chunks)
+    
+    for i in range(n_chunks):
+        spe[i], sen[i] = spe_sen(G_split[i], L_split[i])
+    return spe, sen
+
+
+def testbed(states, q_init = np.zeros((2,2)), learning=False, thirst=1):
+    """
+    Launch a testbed determined by the obs array for an agent with one or two fix or plastic learning rates
+
+    PARAMETERS
+    -----
+    states: array
+        observation correponding to states
+
+    RETURNS
+    -------
+    rec_choice: array
+         recording the choice of the agent for each episode and each iteration
+    rec_q: array
+         recording the internal q-values of the agent
+    rec_reward: array
+         recording the learning rates
+    """
+    n_trials = len(states)
+    expected_actions = states
+
+    rec_q = np.zeros((n_trials, 2, 2), np.float)
+    rec_action = np.zeros(n_trials, np.int)
+    rec_reward = np.zeros(n_trials, np.int)
+
+    q_est = q_init
+    for i in range(n_trials):
+        #Modify the Q estimates given the motivation
+        q_est = motivation_effect(q_init, thirst)
+        #Choose given the Q estimates and the state
+        action = softmax(q_est[states[i]])
+        #Record the choice
+        rec_action[i] = action
+        if states[i] == 1:
+            if action == 1:
+                reward = 1
+            else:
+                reward = 0
+        else:
+            reward = 0
+        rec_reward[i] = reward
+        #Update the q_values gove the state, action and reward
+        if learning:
+            q_est[states[i], action] = set_qnext(q_est[states[i], action], reward)
+
+        #Record Q estimate
+        rec_q[i] = q_est
+        thirst -= 0.01
+        #import pdb; pdb.set_trace()
+
+    return rec_q, rec_action, rec_reward
+
+def motiv_expe(itsit=1):
+    """An experiment where the motivation matters
+    #Define the intensity of licking
+    itsit = 1"""
+    #For action 0 (no-go) then there is no-lick (0)
+    #And for action
+    q_init = np.array([[itsit,-itsit],
+                      [-itsit,itsit]])
+    #Initiate the motivation
+    thirst = itsit
+    states = stimulus(200, 0.5)
+    rec_q, rec_action, rec_reward = testbed(states, q_init)
+    return states, rec_action
+
+
+def spe_sen(target, actual):
+    """Compute the (specificity,sensitivity) couple and the Matthews correlation coefficient
+    for a desired Boolean function called ftar for a neuron implementing the Boolean function f.
+
+    parameters
+    ----------
+    target : Boolean array
+        actions taken
+    actual : Boolean array
+        actions expected
+
+    returns
+    -------
+    spe : a float between 0 and 1
+    sen : a float between 0 and 1
+    """
+    #Use the binary of the vector to see the difference between actual and target
+    tp = np.array(target)*2 - actual
+    TN = len(np.repeat(tp,tp==0))
+    FN = len(np.repeat(tp,tp==2))
+    TP = len(np.repeat(tp,tp==1))
+    FP = len(np.repeat(tp,tp==-1))
+
+    spe = float(TN)/(TN+FP)
+    sen = float(TP)/(TP+FN)
+
+    return spe, sen
 
 
 def set_qnext(qprev, reward, alpha=0.1):
@@ -131,50 +239,18 @@ class Task(HasTraits):
             reward = -1
         self.agents[0].update(state, action, reward)
 
+def motivation_effect(q, motivation):
+    """Modify the Q-values depending on the motivation of the agent"""
+    q_motiv = np.zeros(q.shape)
+    for action in range(2):
+        for state in range(2):
+            if action == 1:
+                q_motiv[state, action] = q[state, action] + 3*motivation
+            else:
+                
+                q_motiv[state, action] = q[state, action] - 3*motivation
+    return q_motiv
 
-def testbed(states, q_init = np.zeros((2,2))):
-    """
-    Launch a testbed determined by the obs array for an agent with one or two fix or plastic learning rates
-
-    PARAMETERS
-    -----
-    states: array
-        observation correponding to states
-
-    RETURNS
-    -------
-    rec_choice: array
-         recording the choice of the agent for each episode and each iteration
-    rec_q: array
-         recording the internal q-values of the agent
-    rec_reward: array
-         recording the learning rates
-    """
-    n_trials = len(states)
-    expected_actions = states
-
-    rec_q = np.zeros((n_trials, 2, 2), np.float)
-    rec_action = np.zeros(n_trials, np.int)
-    rec_reward = np.zeros(n_trials, np.int)
-
-    q_est = q_init
-    for i in range(n_trials):
-        #Choose given the Q estimates and the state
-        action = softmax(q_est[states[i]])
-        #Record the choice
-        rec_action[i] = action
-        if action == expected_actions[i]:
-            reward = 1
-        else:
-            reward = -1
-        rec_reward[i] = reward
-        #Update the q_values gove the state, action and reward
-        q_est[states[i], action] = set_qnext(q_est[states[i], action], reward)
-        #Record Q estimate
-        rec_q[i] = q_est
-        #import pdb; pdb.set_trace()
-
-    return rec_q, rec_action, rec_reward
 
 class TestTestbed(unittest.TestCase):
     """Testing the testbed"""
@@ -185,38 +261,6 @@ class TestTestbed(unittest.TestCase):
                         stimulus(prob, duration)])
         rec_q, rec_choice, rec_rewad = testbed(obs)
 
-def spe_sen(target,actual):
-    """Compute the (specificity,sensitivity) couple and the Matthews correlation coefficient
-    for a desired Boolean function called ftar for a neuron implementing the Boolean function f.
-
-    parameters
-    ----------
-    target : Boolean array
-        actions taken
-    actual : Boolean array
-        actions expected
-
-    returns
-    -------
-    spe : a float between 0 and 1
-    sen : a float between 0 and 1
-    """
-    #Use the binary of the vector to see the difference between actual and target
-    tp = np.array(target)*2 - actual
-    TN = len(np.repeat(tp,tp==0))
-    FN = len(np.repeat(tp,tp==2))
-    TP = len(np.repeat(tp,tp==1))
-    FP = len(np.repeat(tp,tp==-1))
-
-    spe = float(TN)/(TN+FP)
-    sen = float(TP)/(TP+FN)
-
-    if (TP+FP)*(TP+FN)*(TN+FP)*(TN+FN) == 0:
-        matt = (TP*TN-FP*FN)
-    else:
-        matt = (TP*TN-FP*FN)/(((TP+FP)*(TP+FN)*(TN+FP)*(TN+FN))**(0.5))
-
-    return spe, sen, matt
 
 def sliding_estimate(target, actual, window_s=20):
     """Compute the specificity and sensitivity given a sliding window"""
@@ -244,3 +288,69 @@ def ROC(spe_traj, sen_traj, colors = ('red', 'blue', 'yellow', 'green')):
     ax.set_xlabel('False Alarm rate')
     ax.set_ylim(0,1)
     ax.set_ylabel('Hit rate')
+
+def testbed(states, q_init = np.zeros((2,2)), learning=False, thirst=1):
+    """
+    Launch a testbed determined by the obs array for an agent with one or two fix or plastic learning rates
+
+    PARAMETERS
+    -----
+    states: array
+        observation correponding to states
+
+    RETURNS
+    -------
+    rec_choice: array
+         recording the choice of the agent for each episode and each iteration
+    rec_q: array
+         recording the internal q-values of the agent
+    rec_reward: array
+         recording the learning rates
+    """
+    n_trials = len(states)
+    expected_actions = states
+
+    rec_q = np.zeros((n_trials, 2, 2), np.float)
+    rec_action = np.zeros(n_trials, np.int)
+    rec_reward = np.zeros(n_trials, np.int)
+
+    q_est = q_init
+    for i in range(n_trials):
+        #Modify the Q estimates given the motivation
+        q_est = motivation_effect(q_init, thirst)
+        #Choose given the Q estimates and the state
+        action = softmax(q_est[states[i]])
+        #Record the choice
+        rec_action[i] = action
+        if states[i] == 1:
+            if action == 1:
+                reward = 1
+            else:
+                reward = 0
+        else:
+            reward = 0
+        rec_reward[i] = reward
+        #Update the q_values gove the state, action and reward
+        if learning:
+            q_est[states[i], action] = set_qnext(q_est[states[i], action], reward)
+
+        #Record Q estimate
+        rec_q[i] = q_est
+        thirst -= 0.01
+        #import pdb; pdb.set_trace()
+
+    return rec_q, rec_action, rec_reward
+
+def motiv_expe(itsit=1):
+    """An experiment where the motivation matters
+    #Define the intensity of licking
+    itsit = 1"""
+    #For action 0 (no-go) then there is no-lick (0)
+    #And for action
+    q_init = np.array([[itsit,-itsit],
+                      [-itsit,itsit]])
+    #Initiate the motivation
+    thirst = itsit
+    states = stimulus(200, 0.5)
+    rec_q, rec_action, rec_reward = testbed(states, q_init)
+    return states, rec_action
