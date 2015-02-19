@@ -138,7 +138,7 @@ def softmax(qval=[0.5,0.9], temp=1):
             return choice
         choice += 1
 
-def testbed(states, q_init = np.zeros((2,2)), learning=True, motivation=True, thirst=1):
+def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_motiv=False):
     """
     Launch a testbed determined by the obs array for an agent with one or two fix or plastic learning rates
 
@@ -157,24 +157,30 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, motivation=True, th
          recording the learning rates
     """
     n_trials = len(states)
-    thirst = motive_curve(3, n_trials)
+    # Generate the evolution of the first given the number of positive stimulus
+    thirst = motive_curve(init_motiv, np.sum(states))
 
     rec_q = np.zeros((n_trials, 2, 2), np.float)
     rec_action = np.zeros(n_trials, np.int)
     rec_reward = np.zeros(n_trials, np.int)
 
     q_est = q_init
+    th_evol = 0
     for i in range(n_trials):
-        if motivation:
-            #Modify the Q estimates given the motivation
-            q_est = set_qnext_motiv(q_init, thirst[i])
+        #Modify the Q estimates given the motivation
+        q_est = set_qnext_motiv(q_init, thirst[th_evol])
         #Choose given the Q estimates and the state
         action = softmax(q_est[states[i]])
         #Record the choice
         rec_action[i] = action
         if states[i] == 1:
             if action == 1:
-                reward = 1
+                #Diminish the thirst at each lick
+                th_evol += 1
+                if rew_motiv:
+                    reward = thirst[th_evol]
+                else:
+                    reward = 1
             else:
                 reward = 0
         else:
@@ -199,23 +205,17 @@ class TestTestbed(unittest.TestCase):
                         stimulus(prob, duration)])
         rec_q, rec_choice, rec_rewad = testbed(obs)
 
-def motiv_expe(itsit, motivation, learning):
+def motiv_expe(itsit, learning, motivation):
     """An experiment where the motivation matters
-    #Define the intensity of licking bla
+    #Define the intensity of licking
     itsit = 1"""
     #For action 0 (no-go) then there is no-lick (0)
     #And for action
-    if motivation:
-        #Initiate the motivation
-        q_init = np.array([[itsit,-itsit],
-                           [-itsit,itsit]])
-    else:
-        q_init = np.array([[itsit,itsit],
-                           [itsit,itsit]])
-    thirst = itsit
+    q_init = np.array([[itsit,-itsit],
+                       [-itsit,itsit]])
 
     states = stimulus(200, 0.5)
-    rec_q, rec_action, rec_reward = testbed(states, q_init, learning=learning, motivation=motivation)
+    rec_q, rec_action, rec_reward = testbed(states, q_init, learning=learning, init_motiv=motivation)
 
     return states, rec_action
 
@@ -234,18 +234,18 @@ def sliding_estimate(target, actual, window_s=20):
 
 
 if __name__=="__main__":
-    repetition = 100
+    repetition = 10
     n_c = 3
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
     itsit = 1
-    motiv = True
+    motiv = 2
     learning = False
     for i in range(repetition):
-        G, L = motiv_expe(itsit, motiv, learning)
+        G, L = motiv_expe(itsit, learning, motiv)
         spe[i], sen[i] = analysis(L, G, n_c)
     plt.plot(1 - np.mean(spe, axis=0), color='r')
     plt.plot(np.mean(sen, axis=0), color='g')
+    plt.savefig('fig3.png')
     plt.show()
-    print motive_curve(3, 8)
 
