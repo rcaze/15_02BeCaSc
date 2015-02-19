@@ -9,6 +9,7 @@ import unittest
 from traits.api import HasTraits, Float, Function, Array, List, Int, Dict
 
 project_name = "Berdi2014"
+folder = "~/Documents/Articles/15_02BeCaSc/Figs/"
 
 def import_data_berdi():
     path = "~/Data/" + project_name + "/"
@@ -36,17 +37,6 @@ class TestStimulus(unittest.TestCase):
         test_stim = stimulus(duration, self.probability)
         #Then
         self.assertAlmostEqual(np.mean(test_stim), probability, 1)
-
-def analysis(L, G, n_chunks=10):
-    """Split the vectors into n_chunks"""
-    G_split = np.array_split(G, n_chunks)
-    L_split = np.array_split(L, n_chunks)
-    spe = np.zeros(n_chunks)
-    sen = np.zeros(n_chunks)
-
-    for i in range(n_chunks):
-        spe[i], sen[i] = spe_sen(G_split[i], L_split[i])
-    return spe, sen
 
 def motive_curve(init_val, n_trials):
     """Define the motivation curve as a linear curve with 0 in the middle"""
@@ -205,20 +195,24 @@ class TestTestbed(unittest.TestCase):
                         stimulus(prob, duration)])
         rec_q, rec_choice, rec_rewad = testbed(obs)
 
-def motiv_expe(itsit, learning, motivation):
-    """An experiment where the motivation matters
-    #Define the intensity of licking
-    itsit = 1"""
-    #For action 0 (no-go) then there is no-lick (0)
-    #And for action
-    q_init = np.array([[itsit,-itsit],
-                       [-itsit,itsit]])
+def analysis(L, G, n_chunks=10):
+    """Split the vectors into n_chunks and analyse them
 
-    states = stimulus(200, 0.5)
-    rec_q, rec_action, rec_reward = testbed(states, q_init, learning=learning, init_motiv=motivation)
+    Parameters
+    ----------
+    L: 1D binary array
+        The licks, actions taken by the agent
+    G: 1D binary array
+        The stimulus, or goal (0 negative and 1 positive)
+    """
+    G_split = np.array_split(G, n_chunks)
+    L_split = np.array_split(L, n_chunks)
+    spe = np.zeros(n_chunks)
+    sen = np.zeros(n_chunks)
 
-    return states, rec_action
-
+    for i in range(n_chunks):
+        spe[i], sen[i] = spe_sen(G_split[i], L_split[i])
+    return spe, sen
 
 def sliding_estimate(target, actual, window_s=20):
     """Compute the specificity and sensitivity given a sliding window"""
@@ -232,20 +226,26 @@ def sliding_estimate(target, actual, window_s=20):
         sen_traj[i] = sen
     return np.array(spe_traj), np.array(sen_traj)
 
+def fig_gen(spe, sen, fname):
+    """Plot the specificity for the early, middle and end section"""
+    plt.plot(1 - np.mean(spe, axis=0), color='r')
+    plt.plot(np.mean(sen, axis=0), color='g')
+    plt.savefig(folder + 'fig3.svg')
+
+itsit = 1
+q_init = np.array([[itsit,-itsit],
+                   [-itsit,itsit]])
+stim = stimulus(200, 0.5)
 
 if __name__=="__main__":
-    repetition = 10
+    repetition = 100
     n_c = 3
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
-    itsit = 1
-    motiv = 2
+    init_motiv = 2
     learning = False
     for i in range(repetition):
-        G, L = motiv_expe(itsit, learning, motiv)
-        spe[i], sen[i] = analysis(L, G, n_c)
-    plt.plot(1 - np.mean(spe, axis=0), color='r')
-    plt.plot(np.mean(sen, axis=0), color='g')
-    plt.savefig('fig3.png')
-    plt.show()
+        rec_q, rec_action, rec_reward = testbed(stim, q_init, learning, init_motiv)
+        spe[i], sen[i] = analysis(rec_action, stim, n_c)
+    fig_gen()
 
