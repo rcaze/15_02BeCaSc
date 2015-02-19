@@ -1,15 +1,17 @@
 #!/usr/bin/python
 """Collaborative project with Alex"""
+import sys
+sys.path.append("/home/rcaze/Documents/Scripts/PYTHON/lib/")
 import numpy as np
 import pandas as pd #Panda library used to handle Alex Data
 import os
 import h5py
 import matplotlib.pyplot as plt
 import unittest
-from traits.api import HasTraits, Float, Function, Array, List, Int, Dict
+from plot_data import adjust_spines
 
 project_name = "Berdi2014"
-folder = "~/Documents/Articles/15_02BeCaSc/Figs/"
+folder = "/home/rcaze/Documents/Articles/15_02BeCaSc/Figs/"
 
 def import_data_berdi():
     path = "~/Data/" + project_name + "/"
@@ -102,7 +104,7 @@ def set_qnext(qprev, reward, alpha=0.1):
     """
     return qprev + alpha * ( reward - qprev )
 
-def softmax(qval=[0.5,0.9], temp=1):
+def softmax(qval=[0.5,0.9], temp=2):
     """
     Generate a softmax choice given a Q-value and a temperature parameter
 
@@ -215,7 +217,7 @@ def analysis(L, G, n_chunks=10):
     return spe, sen
 
 def sliding_estimate(target, actual, window_s=20):
-    """Compute the specificity and sensitivity given a sliding window"""
+    """Compute the specificity and sensitivity iven a sliding window"""
     n_windows = len(target) - window_s
     spe_traj = range(n_windows)
     sen_traj = range(n_windows)
@@ -226,11 +228,25 @@ def sliding_estimate(target, actual, window_s=20):
         sen_traj[i] = sen
     return np.array(spe_traj), np.array(sen_traj)
 
-def fig_gen(spe, sen, fname):
+def fig_gen(spe, sen, fname='fig_model.png'):
     """Plot the specificity for the early, middle and end section"""
-    plt.plot(1 - np.mean(spe, axis=0), color='r')
-    plt.plot(np.mean(sen, axis=0), color='g')
-    plt.savefig(folder + 'fig3.svg')
+    fig, ax = plt.subplots()
+    adjust_spines(ax, ['left', 'bottom'])
+    fa_rate = 1 - np.mean(spe, axis=0)
+    fa_err = np.var(spe, axis=0)
+    hits_rate = np.mean(sen, axis=0)
+    hits_err = np.var(sen, axis=0)
+    plt.plot(np.arange(1,4), hits_rate, color='#41b93c', linewidth=4)
+    plt.plot(np.arange(1,4), fa_rate, color='#ec1d27', linewidth=4)
+    width = 0.5
+    ax.bar(np.arange(1,4)-width/2., hits_rate, width, yerr=hits_err, color='#adde76', label='HIT rate')
+    ax.bar(np.arange(1,4)-width/2., fa_rate, width, yerr=fa_err, color='#f46f80', label='FA rate')
+    plt.xlim(0,4)
+    plt.ylabel("Response Rate")
+    plt.xlabel(r'Session Start $\rightarrow$ Session End')
+    plt.xticks(range(1,4), ["Initial", "Middle", "Final"])
+    ax.legend()
+    plt.savefig(folder + fname)
 
 itsit = 1
 q_init = np.array([[itsit,-itsit],
@@ -238,14 +254,14 @@ q_init = np.array([[itsit,-itsit],
 stim = stimulus(200, 0.5)
 
 if __name__=="__main__":
-    repetition = 100
+    repetition = 10
     n_c = 3
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
-    init_motiv = 2
+    init_motiv = 5
     learning = False
     for i in range(repetition):
         rec_q, rec_action, rec_reward = testbed(stim, q_init, learning, init_motiv)
         spe[i], sen[i] = analysis(rec_action, stim, n_c)
-    fig_gen()
+    fig_gen(spe, sen, "fig_model2.png")
 
