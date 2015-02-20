@@ -1,25 +1,11 @@
 #!/usr/bin/python
 """Collaborative project with Alex"""
-import sys
-sys.path.append("/home/rcaze/Documents/Scripts/PYTHON/lib/")
 import numpy as np
-import pandas as pd #Panda library used to handle Alex Data
-import os
-import h5py
 import matplotlib.pyplot as plt
 import unittest
-from plot_data import adjust_spines, autolabel
-import scipy.io
 
-project_name = "Berdi2014"
-folder = "/home/rcaze/Documents/Articles/15_02BeCaSc/Figs/"
-
-def import_data_berdi():
-    path = "~/Data/" + project_name + "/"
-    os.chdir(path) #Change of directory
-    for fname in os.dirlist(path):
-        with open(fname) as f:
-            pd.read_csv(f)
+project_name = "15_02BeCaSc"
+folder = "../Figs/"
 
 def stimulus(duration, probability):
     """Generate a stimulus of length duration"""
@@ -222,22 +208,10 @@ def analysis(L, G, n_chunks=10):
         spe[i], sen[i] = spe_sen(G_split[i], L_split[i])
     return spe, sen
 
-def sliding_estimate(target, actual, window_s=20):
-    """Compute the specificity and sensitivity iven a sliding window"""
-    n_windows = len(target) - window_s
-    spe_traj = range(n_windows)
-    sen_traj = range(n_windows)
-    for i in xrange(n_windows):
-        spe, sen, matt = spe_sen(target[i:i + window_s],
-                                 actual[i:i + window_s])
-        spe_traj[i] = spe
-        sen_traj[i] = sen
-    return np.array(spe_traj), np.array(sen_traj)
-
 def fig1_gen(spe, sen, fname='fig_model.png'):
     """Plot the specificity for the early, middle and end section"""
     fig, ax = plt.subplots()
-    adjust_spines(ax, ['left', 'bottom'])
+    #adjust_spines(ax, ['left', 'bottom'])
     fa_rate = 1 - np.mean(spe, axis=0)
     fa_err = np.var(spe, axis=0)
     hits_rate = np.mean(sen, axis=0)
@@ -257,7 +231,7 @@ def fig1_gen(spe, sen, fname='fig_model.png'):
 def fig2_gen(thirst, fname='fig_thirst.png'):
     """Plot the values at different interval in a ROC plot"""
     fig, ax = plt.subplots()
-    adjust_spines(ax, ['left', 'bottom'])
+    #adjust_spines(ax, ['left', 'bottom'])
     for i, th_c in enumerate(thirst):
         plt.plot(th_c, linewidth=4, color='black')
     plt.xlim(0,n_trials)
@@ -280,15 +254,13 @@ def fig3_gen(spe, sen, fname='fig_roc.png'):
     plt.ylabel("Hit rate")
     plt.savefig(folder + fname)
 
-
-itsit = 1
-q_init = np.array([[itsit,-itsit],
-                   [-itsit,itsit]], dtype=np.float)
-
 if __name__=="__main__":
-    repetition = 20
+    itsit = 1
+    q_init = np.array([[itsit,-itsit],
+                       [-itsit,itsit]], dtype=np.float)
+    repetition = 15
     n_c = 3
-    n_trials = 200
+    n_trials = 150
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
     rec_thirst = np.zeros((repetition, n_trials))
@@ -299,7 +271,7 @@ if __name__=="__main__":
         stim = stimulus(n_trials, 0.5)
         rec_q, rec_action, rec_reward, rec_thirst[i] = testbed(stim, q_init, learning, init_motiv, rew_motiv)
         spe[i], sen[i] = analysis(rec_action, stim, n_c)
-    fig1_gen(spe, sen, "fig_model2.png")
+    fig1_gen(spe, sen, "fig_model.png")
     fig2_gen(rec_thirst, "fig_thirst.png")
     fig3_gen(spe, sen, "fig_roc.png")
     plt.show()
