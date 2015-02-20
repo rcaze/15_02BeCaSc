@@ -48,7 +48,7 @@ def motive_curve(init_val, n_trials):
 
 def set_qnext_motiv(q, motivation):
     """Modify the Q-values depending on the motivation of the agent"""
-    q_motiv = np.zeros(q.shape)
+    q_motiv = np.zeros(q.shape, np.float)
     for action in range(2):
         for state in range(2):
             if action == 1:
@@ -156,7 +156,7 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
     rec_q = np.zeros((n_trials, 2, 2), np.float)
     rec_action = np.zeros(n_trials, np.int)
     rec_reward = np.zeros(n_trials, np.int)
-    rec_thirst = np.zeros(n_trials, np.int)
+    rec_thirst = np.zeros(n_trials, np.float)
 
     q_est = q_init
     th_evol = 0
