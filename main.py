@@ -146,8 +146,14 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
     rec_thirst = np.zeros(n_trials, np.float)
 
     q_est = copy.deepcopy(q_init)
-    th_evol = -1
+    q_lea = copy.deepcopy(q_init)
+    th_evol = 0
     for i in range(n_trials):
+        #Modify the Q estimates given the motivation
+        q_est = copy.deepcopy(q_lea)
+        if not rew_motiv:
+            q_est = set_qnext_motiv(q_lea, thirst[th_evol])
+
         #Choose given the Q estimates and the state
         action = softmax(q_est[states[i]])
         #Record the choice
@@ -155,11 +161,11 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
         if states[i] == 1:
             if action == 1:
                 #Diminish the thirst at each lick
-                th_evol += 1
                 if rew_motiv:
                     reward = thirst[th_evol]
                 else:
                     reward = 1
+                th_evol += 1
             else:
                 reward = 0
         else:
@@ -172,15 +178,19 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
             else:
                 reward = 0
         rec_reward[i] = reward
-        #Modify the Q estimates given the motivation
-        if not rew_motiv:
-            q_est = set_qnext_motiv(q_init, thirst[th_evol])
 
+
+        #print q_lea
         #Update the q_values given the state, action and reward
         if learning:
-            q_est[states[i], action] = set_qnext(q_est[states[i], action], reward)
-
-        #print states[i], action, reward
+            q_lea[states[i], action] = set_qnext(q_lea[states[i], action], reward)
+        '''
+        print '\n'
+        print states[i], action, reward
+        print '\n'
+        print q_lea
+        import pdb; pdb.set_trace()
+        '''
         #Record Q estimate
         rec_q[i] = q_est
 
@@ -188,7 +198,6 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
         rec_thirst[i] = thirst[th_evol]
 
 
-        #import pdb; pdb.set_trace()
 
     return rec_q, rec_action, rec_reward, rec_thirst
 
@@ -267,7 +276,7 @@ def fig3_gen(spe, sen, fname='fig_roc.png'):
     plt.savefig(folder + fname)
 
 if __name__=="__main__":
-    itsit = 1
+    itsit = 0
     q_init = np.array([[itsit,-itsit],
                        [-itsit,itsit]], dtype=np.float)
     repetition = 15
@@ -276,7 +285,7 @@ if __name__=="__main__":
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
     rec_thirst = np.zeros((repetition, n_trials))
-    rew_motiv = False
+    rew_motiv = True
     init_motiv = 3
     learning = True
     for i in range(repetition):
