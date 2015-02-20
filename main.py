@@ -170,28 +170,25 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
                 reward = 0
         else:
             if action == 1:
-                #Diminish the thirst at each lick
-                if rew_motiv:
-                    reward = -thirst[th_evol]
-                else:
-                    reward = -1
+                reward = -1
             else:
                 reward = 0
         rec_reward[i] = reward
 
 
         #print q_lea
+
         #Update the q_values given the state, action and reward
         if learning:
             q_lea[states[i], action] = set_qnext(q_lea[states[i], action], reward)
-        '''
+        """
         print '\n'
         print states[i], action, reward
         print '\n'
         print q_lea
         import pdb; pdb.set_trace()
-        '''
         #Record Q estimate
+        """
         rec_q[i] = q_est
 
         #Record the thirst variable
@@ -276,7 +273,7 @@ def fig3_gen(spe, sen, fname='fig_roc.png'):
     plt.savefig(folder + fname)
 
 if __name__=="__main__":
-    itsit = 0
+    itsit = 1
     q_init = np.array([[itsit,-itsit],
                        [-itsit,itsit]], dtype=np.float)
     repetition = 15
@@ -285,16 +282,15 @@ if __name__=="__main__":
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
     rec_thirst = np.zeros((repetition, n_trials))
-    rew_motiv = True
-    init_motiv = 3
+    rew_motiv = False
+    init_motiv = 0
     learning = True
     for i in range(repetition):
         stim = stimulus(n_trials, 0.5)
         rec_q, rec_action, rec_reward, rec_thirst[i] = testbed(stim, q_init, learning, init_motiv, rew_motiv)
         spe[i], sen[i] = analysis(rec_action, stim, n_c)
-    fig1_gen(spe, sen, "fig_model.png")
-    fig2_gen(rec_thirst, "fig_thirst.png")
-    fig3_gen(spe, sen, "fig_roc.png")
-    print rec_q[-1]
-    plt.show()
-
+    fig1_gen(spe, sen, "fig_model2.png")
+    fig2_gen(rec_thirst, "fig_thirst2.png")
+    fig3_gen(spe, sen, "fig_roc2.png")
+    #print rec_q[-1]
+    #plt.show()
