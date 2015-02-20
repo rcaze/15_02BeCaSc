@@ -3,9 +3,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import unittest
+import copy
 
 project_name = "15_02BeCaSc"
-folder = "../Figs/"
+folder = "/home/rcaze/Documents/Articles/15_02BeCaSc/Figs/"
 
 def stimulus(duration, probability):
     """Generate a stimulus of length duration"""
@@ -144,12 +145,9 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
     rec_reward = np.zeros(n_trials, np.int)
     rec_thirst = np.zeros(n_trials, np.float)
 
-    q_est = q_init
-    th_evol = 0
+    q_est = copy.deepcopy(q_init)
+    th_evol = -1
     for i in range(n_trials):
-        #Modify the Q estimates given the motivation
-        if not rew_motiv:
-            q_est = set_qnext_motiv(q_init, thirst[th_evol])
         #Choose given the Q estimates and the state
         action = softmax(q_est[states[i]])
         #Record the choice
@@ -157,26 +155,40 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
         if states[i] == 1:
             if action == 1:
                 #Diminish the thirst at each lick
+                th_evol += 1
                 if rew_motiv:
                     reward = thirst[th_evol]
                 else:
                     reward = 1
-                th_evol += 1
             else:
                 reward = 0
         else:
-            reward = 0
+            if action == 1:
+                #Diminish the thirst at each lick
+                if rew_motiv:
+                    reward = -thirst[th_evol]
+                else:
+                    reward = -1
+            else:
+                reward = 0
         rec_reward[i] = reward
+        #Modify the Q estimates given the motivation
+        if not rew_motiv:
+            q_est = set_qnext_motiv(q_init, thirst[th_evol])
+
         #Update the q_values given the state, action and reward
         if learning:
             q_est[states[i], action] = set_qnext(q_est[states[i], action], reward)
 
+        #print states[i], action, reward
         #Record Q estimate
         rec_q[i] = q_est
 
         #Record the thirst variable
         rec_thirst[i] = thirst[th_evol]
-    #import pdb; pdb.set_trace()
+
+
+        #import pdb; pdb.set_trace()
 
     return rec_q, rec_action, rec_reward, rec_thirst
 
@@ -265,7 +277,7 @@ if __name__=="__main__":
     sen = np.zeros((repetition, n_c))
     rec_thirst = np.zeros((repetition, n_trials))
     rew_motiv = False
-    init_motiv = 5
+    init_motiv = 3
     learning = True
     for i in range(repetition):
         stim = stimulus(n_trials, 0.5)
@@ -274,5 +286,6 @@ if __name__=="__main__":
     fig1_gen(spe, sen, "fig_model.png")
     fig2_gen(rec_thirst, "fig_thirst.png")
     fig3_gen(spe, sen, "fig_roc.png")
+    print rec_q[-1]
     plt.show()
 
