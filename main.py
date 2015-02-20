@@ -8,7 +8,8 @@ import os
 import h5py
 import matplotlib.pyplot as plt
 import unittest
-from plot_data import adjust_spines
+from plot_data import adjust_spines, autolabel
+import scipy.io
 
 project_name = "Berdi2014"
 folder = "/home/rcaze/Documents/Articles/15_02BeCaSc/Figs/"
@@ -155,6 +156,7 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
     rec_q = np.zeros((n_trials, 2, 2), np.float)
     rec_action = np.zeros(n_trials, np.int)
     rec_reward = np.zeros(n_trials, np.int)
+    rec_thirst = np.zeros(n_trials, np.int)
 
     q_est = q_init
     th_evol = 0
@@ -185,10 +187,12 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
 
         #Record Q estimate
         rec_q[i] = q_est
-    import pdb; pdb.set_trace()
 
+        #Record the thirst variable
+        rec_thirst[i] = thirst[th_evol]
+    #import pdb; pdb.set_trace()
 
-    return rec_q, rec_action, rec_reward
+    return rec_q, rec_action, rec_reward, rec_thirst
 
 class TestTestbed(unittest.TestCase):
     """Testing the testbed"""
@@ -230,7 +234,7 @@ def sliding_estimate(target, actual, window_s=20):
         sen_traj[i] = sen
     return np.array(spe_traj), np.array(sen_traj)
 
-def fig_gen(spe, sen, fname='fig_model.png'):
+def fig1_gen(spe, sen, fname='fig_model.png'):
     """Plot the specificity for the early, middle and end section"""
     fig, ax = plt.subplots()
     adjust_spines(ax, ['left', 'bottom'])
@@ -250,22 +254,53 @@ def fig_gen(spe, sen, fname='fig_model.png'):
     ax.legend()
     plt.savefig(folder + fname)
 
+def fig2_gen(thirst, fname='fig_thirst.png'):
+    """Plot the values at different interval in a ROC plot"""
+    fig, ax = plt.subplots()
+    adjust_spines(ax, ['left', 'bottom'])
+    for i, th_c in enumerate(thirst):
+        plt.plot(th_c, linewidth=4, color='black')
+    plt.xlim(0,n_trials)
+    plt.ylabel("Motivation variable")
+    plt.xlabel("Time (bins)")
+    plt.savefig(folder + fname)
+
+def fig3_gen(spe, sen, fname='fig_roc.png'):
+    """Plot the specificity for the early, middle and end section"""
+    fig, ax = plt.subplots()
+    fa_rate = 1 - spe
+    hits_rate = sen
+    colors = ('#ec1f26','#f79d0e','#a6d71e')
+    for i in range(3):
+        plt.scatter(fa_rate[:,i],hits_rate[:,i], c=colors[i], s=120)
+    ax.plot(np.arange(0,1.1,0.1), np.arange(0,1.1,0.1), color='black', linestyle="--")
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+    plt.xlabel("FA rate")
+    plt.ylabel("Hit rate")
+    plt.savefig(folder + fname)
+
+
 itsit = 1
 q_init = np.array([[itsit,-itsit],
                    [-itsit,itsit]], dtype=np.float)
-stim = stimulus(200, 0.5)
 
 if __name__=="__main__":
-    repetition = 100
+    repetition = 20
     n_c = 3
+    n_trials = 200
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
-    rew_motiv = True
+    rec_thirst = np.zeros((repetition, n_trials))
+    rew_motiv = False
     init_motiv = 5
     learning = True
     for i in range(repetition):
-        rec_q, rec_action, rec_reward = testbed(stim, q_init, learning, init_motiv, rew_motiv)
+        stim = stimulus(n_trials, 0.5)
+        rec_q, rec_action, rec_reward, rec_thirst[i] = testbed(stim, q_init, learning, init_motiv, rew_motiv)
         spe[i], sen[i] = analysis(rec_action, stim, n_c)
-    fig_gen(spe, sen, "fig_model2.png")
+    fig1_gen(spe, sen, "fig_model2.png")
+    fig2_gen(rec_thirst, "fig_thirst.png")
+    fig3_gen(spe, sen, "fig_roc.png")
     plt.show()
 
