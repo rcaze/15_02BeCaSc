@@ -160,7 +160,8 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
     th_evol = 0
     for i in range(n_trials):
         #Modify the Q estimates given the motivation
-        q_est = set_qnext_motiv(q_init, thirst[th_evol])
+        if not rew_motiv:
+            q_est = set_qnext_motiv(q_init, thirst[th_evol])
         #Choose given the Q estimates and the state
         action = softmax(q_est[states[i]])
         #Record the choice
@@ -168,11 +169,11 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
         if states[i] == 1:
             if action == 1:
                 #Diminish the thirst at each lick
-                th_evol += 1
                 if rew_motiv:
                     reward = thirst[th_evol]
                 else:
                     reward = 1
+                th_evol += 1
             else:
                 reward = 0
         else:
@@ -184,7 +185,8 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
 
         #Record Q estimate
         rec_q[i] = q_est
-        #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
+
 
     return rec_q, rec_action, rec_reward
 
@@ -250,18 +252,20 @@ def fig_gen(spe, sen, fname='fig_model.png'):
 
 itsit = 1
 q_init = np.array([[itsit,-itsit],
-                   [-itsit,itsit]])
+                   [-itsit,itsit]], dtype=np.float)
 stim = stimulus(200, 0.5)
 
 if __name__=="__main__":
-    repetition = 10
+    repetition = 100
     n_c = 3
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
+    rew_motiv = True
     init_motiv = 5
-    learning = False
+    learning = True
     for i in range(repetition):
-        rec_q, rec_action, rec_reward = testbed(stim, q_init, learning, init_motiv)
+        rec_q, rec_action, rec_reward = testbed(stim, q_init, learning, init_motiv, rew_motiv)
         spe[i], sen[i] = analysis(rec_action, stim, n_c)
     fig_gen(spe, sen, "fig_model2.png")
+    plt.show()
 
