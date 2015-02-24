@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import unittest
 import copy
+from scipy import io
 
 project_name = "15_02BeCaSc"
 folder = "../Figs/"
@@ -286,7 +287,7 @@ if __name__=="__main__":
     rew_motiv = False
     learning = True
     #Generate all the figures for the article
-    suf = ".svg"
+    suf = ".png"
     init_motiv = range(4)
     for c_motiv in init_motiv:
         for i in range(repetition):
@@ -298,4 +299,9 @@ if __name__=="__main__":
         fig3_gen(spe, sen, "fig_roc" + str(c_motiv) + suf)
     #print rec_q[-1]
     #plt.show()
-
+    #Making the figures with the data of Alexandra
+    mat = io.loadmat('HITFA_n16.mat')
+    spe = mat['n16_3seg']['FAs'][0][0]
+    sen = mat['n16_3seg']['HITs'][0][0]
+    fig1_gen(1-spe, sen, "fig_data" + suf)
+    fig3_gen(1-spe, sen, "fig_data_roc" + suf)
