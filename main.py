@@ -6,7 +6,7 @@ import unittest
 import copy
 
 project_name = "15_02BeCaSc"
-folder = "/home/rcaze/Documents/Articles/15_02BeCaSc/Figs/"
+folder = "../Figs/"
 
 def stimulus(duration, probability):
     """Generate a stimulus of length duration"""
@@ -92,7 +92,7 @@ def set_qnext(qprev, reward, alpha=0.1):
     """
     return qprev + alpha * ( reward - qprev )
 
-def softmax(qval=[0.5,0.9], temp=2):
+def softmax(qval=[0.5,0.9], temp=1):
     """
     Generate a softmax choice given a Q-value and a temperature parameter
 
@@ -187,8 +187,8 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
         print '\n'
         print q_lea
         import pdb; pdb.set_trace()
-        #Record Q estimate
         """
+        #Record Q estimate
         rec_q[i] = q_est
 
         #Record the thirst variable
@@ -266,6 +266,7 @@ def fig3_gen(spe, sen, fname='fig_roc.png'):
     for i in range(3):
         plt.scatter(fa_rate[:,i],hits_rate[:,i], c=colors[i], s=120)
     ax.plot(np.arange(0,1.1,0.1), np.arange(0,1.1,0.1), color='black', linestyle="--")
+    ax.set_aspect('equal')
     plt.xlim(0,1)
     plt.ylim(0,1)
     plt.xlabel("FA rate")
@@ -274,8 +275,8 @@ def fig3_gen(spe, sen, fname='fig_roc.png'):
 
 if __name__=="__main__":
     itsit = 1
-    q_init = np.array([[itsit,-itsit],
-                       [-itsit,itsit]], dtype=np.float)
+    q_init = np.array([[0,-itsit],
+                       [0,itsit]], dtype=np.float)
     repetition = 15
     n_c = 3
     n_trials = 150
@@ -283,14 +284,18 @@ if __name__=="__main__":
     sen = np.zeros((repetition, n_c))
     rec_thirst = np.zeros((repetition, n_trials))
     rew_motiv = False
-    init_motiv = 0
     learning = True
-    for i in range(repetition):
-        stim = stimulus(n_trials, 0.5)
-        rec_q, rec_action, rec_reward, rec_thirst[i] = testbed(stim, q_init, learning, init_motiv, rew_motiv)
-        spe[i], sen[i] = analysis(rec_action, stim, n_c)
-    fig1_gen(spe, sen, "fig_model2.png")
-    fig2_gen(rec_thirst, "fig_thirst2.png")
-    fig3_gen(spe, sen, "fig_roc2.png")
+    #Generate all the figures for the article
+    suf = ".svg"
+    init_motiv = range(4)
+    for c_motiv in init_motiv:
+        for i in range(repetition):
+            stim = stimulus(n_trials, 0.5)
+            rec_q, rec_action, rec_reward, rec_thirst[i] = testbed(stim, q_init, learning, c_motiv, rew_motiv)
+            spe[i], sen[i] = analysis(rec_action, stim, n_c)
+        fig1_gen(spe, sen, "fig_model" + str(c_motiv) + suf)
+        fig2_gen(rec_thirst, "fig_thirst" + str(c_motiv) + suf)
+        fig3_gen(spe, sen, "fig_roc" + str(c_motiv) + suf)
     #print rec_q[-1]
     #plt.show()
+
