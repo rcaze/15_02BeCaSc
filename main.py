@@ -235,28 +235,34 @@ def fig1_gen(spe, sen, fname='fig_model.png'):
     fa_err = np.var(spe, axis=0)
     hits_rate = np.mean(sen, axis=0)
     hits_err = np.var(sen, axis=0)
-    plt.plot(np.arange(1,4), hits_rate, color='#41b93c', linewidth=4)
-    plt.plot(np.arange(1,4), fa_rate, color='#ec1d27', linewidth=4)
+    ax.plot(np.arange(1,4), hits_rate, color='#41b93c', linewidth=4)
+    ax.plot(np.arange(1,4), fa_rate, color='#ec1d27', linewidth=4)
     width = 0.5
     ax.bar(np.arange(1,4)-width/2., hits_rate, width, yerr=hits_err, color='#adde76', label='HIT rate')
     ax.bar(np.arange(1,4)-width/2., fa_rate, width, yerr=fa_err, color='#f46f80', label='FA rate')
     plt.xlim(0,4)
     plt.ylabel("Response Rate")
     plt.xlabel(r'Session Start $\rightarrow$ Session End')
-    plt.xticks(range(1,4), ["Initial", "Middle", "Final"])
+    ax.set_xticks(range(1,4), ["Initial", "Middle", "Final"])
     ax.legend()
     plt.savefig(folder + fname)
 
-def fig2_gen(thirst, fname='fig_thirst.png'):
+def fig2_gen(thirst, ax=None, color=None, fname='fig_thirst.png'):
     """Plot the values at different interval in a ROC plot"""
-    fig, ax = plt.subplots()
+    plt.close()
+    if not ax:
+        fig, ax = plt.subplots()
     #adjust_spines(ax, ['left', 'bottom'])
     for i, th_c in enumerate(thirst):
-        plt.plot(th_c, linewidth=4, color='black')
+        if not color:
+            plt.plot(th_c, linewidth=4, color='black')
+        else:
+            plt.plot(th_c, linewidth=4, color=color)
     plt.xlim(0,n_trials)
     plt.ylabel("Motivation variable")
     plt.xlabel("Time (bins)")
     plt.savefig(folder + fname)
+    return ax
 
 def fig3_gen(spe, sen, fname='fig_roc.png'):
     """Plot the specificity for the early, middle and end section"""
@@ -270,11 +276,12 @@ def fig3_gen(spe, sen, fname='fig_roc.png'):
     ax.set_aspect('equal')
     plt.xlim(0,1)
     plt.ylim(0,1)
-    plt.xlabel("FA rate")
-    plt.ylabel("Hit rate")
+    ax.set_xlabel("FA rate")
+    ax.set_ylabel("Hit rate")
     plt.savefig(folder + fname)
 
 if __name__=="__main__":
+    plt.close('all')
     itsit = 1
     q_init = np.array([[0,-itsit],
                        [0,itsit]], dtype=np.float)
@@ -295,7 +302,10 @@ if __name__=="__main__":
             rec_q, rec_action, rec_reward, rec_thirst[i] = testbed(stim, q_init, learning, c_motiv, rew_motiv)
             spe[i], sen[i] = analysis(rec_action, stim, n_c)
         fig1_gen(spe, sen, "fig_model" + str(c_motiv) + suf)
-        fig2_gen(rec_thirst, "fig_thirst" + str(c_motiv) + suf)
+        ax_th = fig2_gen(rec_thirst, "fig_thirst" + suf)
+        if c_motiv > 0:
+            def_color = (c_motiv*0.20,0,0)
+            fig2_gen(rec_thirst, ax_th, def_color,  "fig_thirst" + suf)
         fig3_gen(spe, sen, "fig_roc" + str(c_motiv) + suf)
     #print rec_q[-1]
     #plt.show()
