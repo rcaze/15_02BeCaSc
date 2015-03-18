@@ -249,7 +249,6 @@ def fig1_gen(spe, sen, fname='fig_model.png'):
 
 def fig2_gen(thirst, ax=None, color=None, fname='fig_thirst.png'):
     """Plot the values at different interval in a ROC plot"""
-    plt.close()
     if not ax:
         fig, ax = plt.subplots()
     #adjust_spines(ax, ['left', 'bottom'])
@@ -276,13 +275,13 @@ def fig3_gen(spe, sen, fname='fig_roc.png'):
     ax.set_aspect('equal')
     plt.xlim(0,1)
     plt.ylim(0,1)
-    ax.set_xlabel("FA rate")
-    ax.set_ylabel("Hit rate")
+    plt.xlabel("FA rate")
+    plt.ylabel("Hit rate")
     plt.savefig(folder + fname)
 
 if __name__=="__main__":
-    plt.close('all')
-    itsit = 1
+    plt.close()
+    itsit = 0
     q_init = np.array([[0,-itsit],
                        [0,itsit]], dtype=np.float)
     repetition = 15
@@ -294,7 +293,7 @@ if __name__=="__main__":
     rew_motiv = False
     learning = True
     #Generate all the figures for the article
-    suf = ".png"
+    suf = ".svg"
     init_motiv = range(4)
     for c_motiv in init_motiv:
         for i in range(repetition):
@@ -304,14 +303,16 @@ if __name__=="__main__":
         fig1_gen(spe, sen, "fig_model" + str(c_motiv) + suf)
         ax_th = fig2_gen(rec_thirst, "fig_thirst" + suf)
         if c_motiv > 0:
-            def_color = (c_motiv*0.20,0,0)
+            def_color = (c_motiv*0.10,0,0)
             fig2_gen(rec_thirst, ax_th, def_color,  "fig_thirst" + suf)
         fig3_gen(spe, sen, "fig_roc" + str(c_motiv) + suf)
     #print rec_q[-1]
     #plt.show()
+    """
     #Making the figures with the data of Alexandra
     mat = io.loadmat('HITFA_n16.mat')
     spe = mat['n16_3seg']['FAs'][0][0]
     sen = mat['n16_3seg']['HITs'][0][0]
     fig1_gen(1-spe, sen, "fig_data" + suf)
     fig3_gen(1-spe, sen, "fig_data_roc" + suf)
+    """
