@@ -8,4 +8,5 @@ setup(name='motivBCS2015',
       author_email='r.caze@iimperial.ac.uk',
       license='GNU',
       packages=['motivBCS2015'],
+      install_requires=['numpy', 'matplotlib', 'unittest'],
       zip_safe=False)
