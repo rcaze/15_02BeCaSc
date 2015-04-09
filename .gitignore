@@ -7,6 +7,9 @@
 # Python egg metadata, regenerated from source file by setuptools.
 /*.egg-info
 
+# The figures generated locally
+*.svg
+
 # Ignore the swap file from vim
 *.swp
 

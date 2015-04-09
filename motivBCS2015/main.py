@@ -2,10 +2,10 @@
 """Code for the generation of figure 3 in our work with Alex"""
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import io
 import copy
 
 project_name = "15_02BeCaSc"
-folder = "../Figs/"
 
 def stimulus(duration, probability):
     """Generate a stimulus of length duration"""
@@ -215,7 +215,7 @@ def fig_spesen(spe, sen, fname='fig_model.png'):
     plt.xlabel(r'Session Start $\rightarrow$ Session End')
     ax.set_xticks(range(1,4), ["Initial", "Middle", "Final"])
     ax.legend()
-    plt.savefig(folder + fname)
+    plt.savefig(fname)
 
 def fig_roc(spe, sen, fname='fig_roc.png'):
     """Plot the specificity for the early, middle and end section"""
@@ -231,7 +231,7 @@ def fig_roc(spe, sen, fname='fig_roc.png'):
     plt.ylim(0,1)
     plt.xlabel("FA rate")
     plt.ylabel("Hit rate")
-    plt.savefig(folder + fname)
+    plt.savefig(fname)
 
 def fig_thirst(thirst, ax=None, color=None, fname='fig_thirst.png'):
     """Plot the values at different interval in a ROC plot"""
@@ -246,44 +246,40 @@ def fig_thirst(thirst, ax=None, color=None, fname='fig_thirst.png'):
     plt.xlim(0,n_trials)
     plt.ylabel("Motivation variable")
     plt.xlabel("Time (bins)")
-    plt.savefig(folder + fname)
+    plt.savefig(fname)
     return ax
 
 
-if __name__=="__main__":
+def figs(folder = "/"):
+    """Generate all the subplots necessary for to draw figure 3,
+    except the experimental data"""
     plt.close()
-    itsit = 0
-    q_init = np.array([[0,-itsit],
-                       [0,itsit]], dtype=np.float)
+    q_init = np.array([[0,0],
+                       [0,0]], dtype=np.float)
     repetition = 15
     n_c = 3
     n_trials = 150
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
     rec_thirst = np.zeros((repetition, n_trials))
-    rew_motiv = False
     learning = True
-    #Generate all the figures for the article
+    #You can change the format of the output figure here
     suf = ".svg"
-    init_motiv = range(4)
-    for c_motiv in init_motiv:
-        for i in range(repetition):
-            stim = stimulus(n_trials, 0.5)
-            rec_q, rec_action, rec_reward, rec_thirst[i] = testbed(stim, q_init, learning, c_motiv, rew_motiv)
-            spe[i], sen[i] = analysis(rec_action, stim, n_c)
-        fig1_gen(spe, sen, "fig_model" + str(c_motiv) + suf)
-        ax_th = fig2_gen(rec_thirst, "fig_thirst" + suf)
-        if c_motiv > 0:
-            def_color = (c_motiv*0.10,0,0)
-            fig2_gen(rec_thirst, ax_th, def_color,  "fig_thirst" + suf)
-        fig3_gen(spe, sen, "fig_roc" + str(c_motiv) + suf)
-    #print rec_q[-1]
-    #plt.show()
-    """
-    #Making the figures with the data of Alexandra
+
+    #Generate the date using Alex data
     mat = io.loadmat('HITFA_n16.mat')
-    spe = mat['n16_3seg']['FAs'][0][0]
-    sen = mat['n16_3seg']['HITs'][0][0]
-    fig1_gen(1-spe, sen, "fig_data" + suf)
-    fig3_gen(1-spe, sen, "fig_data_roc" + suf)
-    """
+    spe_d = mat['n16_3seg']['FAs'][0][0]
+    sen_d = mat['n16_3seg']['HITs'][0][0]
+    fig_spesen(1-spe_d, sen_d, "fig_data" + suf)
+    fig_roc(1-spe_d, sen_d, "fig_data_roc" + suf)
+
+    #Generate the subplot of the models
+    init_motiv = [0, 2, 2]
+    rew_motiv = [False, True, False]
+    for i, c_motiv in enumerate(init_motiv):
+        for j in range(repetition):
+            stim = stimulus(n_trials, 0.5)
+            rec_q, rec_action, rec_reward, rec_thirst[j] = testbed(stim, q_init, learning, c_motiv, rew_motiv[i])
+            spe[j], sen[j] = analysis(rec_action, stim, n_c)
+        fig_spesen(spe, sen, folder + "fig_model" + str(c_motiv) + str(int(rew_motiv[i])) + suf)
+        fig_roc(spe, sen, folder + "fig_roc" + str(c_motiv) + str(int(rew_motiv[i])) + suf)

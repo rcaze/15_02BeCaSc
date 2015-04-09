@@ -1,1 +1,1 @@
-from .main import stimulus, testbed
+from .main import stimulus, testbed, figs
