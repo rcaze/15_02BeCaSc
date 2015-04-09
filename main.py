@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import unittest
 import copy
-from scipy import io
 
 project_name = "15_02BeCaSc"
 folder = "../Figs/"
