@@ -2,7 +2,6 @@
 """Code for the generation of figure 3 in our work with Alex"""
 import numpy as np
 import matplotlib.pyplot as plt
-import unittest
 import copy
 
 project_name = "15_02BeCaSc"
@@ -178,31 +177,6 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
 
 
     return rec_q, rec_action, rec_reward, rec_thirst
-
-class TestStimulus(unittest.TestCase):
-    """Testing the generation of stimulus"""
-    def setUp(self):
-        self.duration = 100000
-        self.probability = 0.5
-
-    def test_stimulus(self):
-        """Test the generation of stimulus"""
-        #Given
-        duration = 10000
-        probability = 0.5
-        #When the stimulus generation is simple
-        test_stim = stimulus(duration, self.probability)
-        #Then
-        self.assertAlmostEqual(np.mean(test_stim), probability, 1)
-
-class TestTestbed(unittest.TestCase):
-    """Testing the testbed"""
-    def setUp(self):
-        prob = 0.5
-        duration = 100
-        obs = np.array([stimulus(prob, duration),
-                        stimulus(prob, duration)])
-        rec_q, rec_choice, rec_rewad = testbed(obs)
 
 def analysis(L, G, n_chunks=10):
     """Split the vectors into n_chunks and analyse them
