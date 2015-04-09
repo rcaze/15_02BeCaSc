@@ -1,3 +1,12 @@
+# Compiled python modules.
+*.pyc
+
+#Setuptools distribution folder.
+/dist/
+
+# Python egg metadata, regenerated from source file by setuptools.
+/*.egg-info
+
+# Ignore the swap file from vim
 *.swp
-*.mat
-*.ipynb
+
