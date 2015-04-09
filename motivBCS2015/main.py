@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""Collaborative project with Alex"""
+"""Code for the generation of figure 3 in our work with Alex"""
 import numpy as np
 import matplotlib.pyplot as plt
 import unittest
@@ -12,24 +12,9 @@ def stimulus(duration, probability):
     """Generate a stimulus of length duration"""
     return np.random.binomial(1, probability, (duration,))
 
-class TestStimulus(unittest.TestCase):
-    """Testing the generation of stimulus"""
-    def setUp(self):
-        self.duration = 100000
-        self.probability = 0.5
-
-    def test_stimulus(self):
-        """Test the generation of stimulus"""
-        #Given
-        duration = 10000
-        probability = 0.5
-        #When the stimulus generation is simple
-        test_stim = stimulus(duration, self.probability)
-        #Then
-        self.assertAlmostEqual(np.mean(test_stim), probability, 1)
-
 def motive_curve(init_val, n_trials):
-    """Define the motivation curve as a linear curve with 0 in the middle"""
+    """Define the motivation curve as a linear curve with 0 in the middle.
+    This is to scale the evolution of M given the number of trials."""
     slope = init_val/float((n_trials-1)/2.)
     return [init_val - i*slope for i in range(n_trials)]
 
@@ -48,17 +33,19 @@ def spe_sen(target, actual):
     """Compute the (specificity,sensitivity) couple and the Matthews correlation coefficient
     for a desired Boolean function called ftar for a neuron implementing the Boolean function f.
 
-    parameters
+    Parameters
     ----------
-    target : Boolean array
+    target : array Bool
         actions taken
-    actual : Boolean array
+    actual : array Bool
         actions expected
 
-    returns
+    Returns
     -------
-    spe : a float between 0 and 1
-    sen : a float between 0 and 1
+    spe : float between 0 and 1
+        specificity of the response
+    sen : float between 0 and 1
+        sensitivity of the response
     """
     #Use the binary of the vector to see the difference between actual and target
     tp = np.array(target)*2 - actual
@@ -122,12 +109,12 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
     """
     Launch a testbed determined by the obs array for an agent with one or two fix or plastic learning rates
 
-    PARAMETERS
-    -----
+    Parameters
+    ----------
     states: array
         observation correponding to states
 
-    RETURNS
+    Returns
     -------
     rec_choice: array
          recording the choice of the agent for each episode and each iteration
@@ -181,13 +168,7 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
         #Update the q_values given the state, action and reward
         if learning:
             q_lea[states[i], action] = set_qnext(q_lea[states[i], action], reward)
-        """
-        print '\n'
-        print states[i], action, reward
-        print '\n'
-        print q_lea
-        import pdb; pdb.set_trace()
-        """
+
         #Record Q estimate
         rec_q[i] = q_est
 
@@ -197,6 +178,22 @@ def testbed(states, q_init = np.zeros((2,2)), learning=True, init_motiv=1, rew_m
 
 
     return rec_q, rec_action, rec_reward, rec_thirst
+
+class TestStimulus(unittest.TestCase):
+    """Testing the generation of stimulus"""
+    def setUp(self):
+        self.duration = 100000
+        self.probability = 0.5
+
+    def test_stimulus(self):
+        """Test the generation of stimulus"""
+        #Given
+        duration = 10000
+        probability = 0.5
+        #When the stimulus generation is simple
+        test_stim = stimulus(duration, self.probability)
+        #Then
+        self.assertAlmostEqual(np.mean(test_stim), probability, 1)
 
 class TestTestbed(unittest.TestCase):
     """Testing the testbed"""
