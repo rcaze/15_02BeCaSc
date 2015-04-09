@@ -1,5 +1,9 @@
 from setuptools import setup
 
+def readme():
+    with open('README.rst') as f:
+        return f.read()
+
 setup(name='motivBCS2015',
       version='0.1',
       description='Code used to generate Figure.3 of our article',
@@ -8,5 +12,5 @@ setup(name='motivBCS2015',
       author_email='r.caze@iimperial.ac.uk',
       license='GNU',
       packages=['motivBCS2015'],
-      install_requires=['numpy', 'matplotlib', 'unittest'],
+      install_requires=['numpy', 'matplotlib'],
       zip_safe=False)
