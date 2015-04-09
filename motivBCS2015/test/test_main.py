@@ -1,5 +1,6 @@
+import numpy as np
 from unittest import TestCase
-from main import stimulus, testbed
+from motivBCS2015 import stimulus
 
 class TestStimulus(TestCase):
     """Testing the generation of stimulus"""
@@ -16,14 +17,4 @@ class TestStimulus(TestCase):
         test_stim = stimulus(duration, self.probability)
         #Then
         self.assertAlmostEqual(np.mean(test_stim), probability, 1)
-
-class TestTestbed(TestCase):
-    """Testing the testbed"""
-    def setUp(self):
-        prob = 0.5
-        duration = 100
-        obs = np.array([stimulus(prob, duration),
-                        stimulus(prob, duration)])
-        rec_q, rec_choice, rec_rewad = testbed(obs)
-
 

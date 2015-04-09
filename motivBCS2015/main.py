@@ -197,7 +197,7 @@ def analysis(L, G, n_chunks=10):
         spe[i], sen[i] = spe_sen(G_split[i], L_split[i])
     return spe, sen
 
-def fig1_gen(spe, sen, fname='fig_model.png'):
+def fig_spesen(spe, sen, fname='fig_model.png'):
     """Plot the specificity for the early, middle and end section"""
     fig, ax = plt.subplots()
     #adjust_spines(ax, ['left', 'bottom'])
@@ -217,7 +217,23 @@ def fig1_gen(spe, sen, fname='fig_model.png'):
     ax.legend()
     plt.savefig(folder + fname)
 
-def fig2_gen(thirst, ax=None, color=None, fname='fig_thirst.png'):
+def fig_roc(spe, sen, fname='fig_roc.png'):
+    """Plot the specificity for the early, middle and end section"""
+    fig, ax = plt.subplots()
+    fa_rate = 1 - spe
+    hits_rate = sen
+    colors = ('#ec1f26','#f79d0e','#a6d71e')
+    for i in range(3):
+        plt.scatter(fa_rate[:,i],hits_rate[:,i], c=colors[i], s=120)
+    ax.plot(np.arange(0,1.1,0.1), np.arange(0,1.1,0.1), color='black', linestyle="--")
+    ax.set_aspect('equal')
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+    plt.xlabel("FA rate")
+    plt.ylabel("Hit rate")
+    plt.savefig(folder + fname)
+
+def fig_thirst(thirst, ax=None, color=None, fname='fig_thirst.png'):
     """Plot the values at different interval in a ROC plot"""
     if not ax:
         fig, ax = plt.subplots()
@@ -233,21 +249,6 @@ def fig2_gen(thirst, ax=None, color=None, fname='fig_thirst.png'):
     plt.savefig(folder + fname)
     return ax
 
-def fig3_gen(spe, sen, fname='fig_roc.png'):
-    """Plot the specificity for the early, middle and end section"""
-    fig, ax = plt.subplots()
-    fa_rate = 1 - spe
-    hits_rate = sen
-    colors = ('#ec1f26','#f79d0e','#a6d71e')
-    for i in range(3):
-        plt.scatter(fa_rate[:,i],hits_rate[:,i], c=colors[i], s=120)
-    ax.plot(np.arange(0,1.1,0.1), np.arange(0,1.1,0.1), color='black', linestyle="--")
-    ax.set_aspect('equal')
-    plt.xlim(0,1)
-    plt.ylim(0,1)
-    plt.xlabel("FA rate")
-    plt.ylabel("Hit rate")
-    plt.savefig(folder + fname)
 
 if __name__=="__main__":
     plt.close()
