@@ -202,9 +202,9 @@ def fig_spesen(spe, sen, fname='fig_model.png'):
     fig, ax = plt.subplots()
     #adjust_spines(ax, ['left', 'bottom'])
     fa_rate = 1 - np.mean(spe, axis=0)
-    fa_err = np.var(spe, axis=0)
+    fa_err = np.std(spe, axis=0)
     hits_rate = np.mean(sen, axis=0)
-    hits_err = np.var(sen, axis=0)
+    hits_err = np.std(sen, axis=0)
     ax.plot(np.arange(1,4), hits_rate, color='#41b93c', linewidth=4)
     ax.plot(np.arange(1,4), fa_rate, color='#ec1d27', linewidth=4)
     width = 0.5
@@ -250,13 +250,13 @@ def fig_thirst(thirst, ax=None, color=None, fname='fig_thirst.png'):
     return ax
 
 
-def figs(folder = "/"):
+def figs(folder="", Qinit=0, nrep=15):
     """Generate all the subplots necessary for to draw figure 3,
     except the experimental data"""
-    plt.close()
-    q_init = np.array([[0,0],
-                       [0,0]], dtype=np.float)
-    repetition = 15
+    plt.close('all')
+    q_init = np.array([[0,-Qinit],
+                       [0,Qinit]], dtype=np.float)
+    repetition = nrep
     n_c = 3
     n_trials = 150
     spe = np.zeros((repetition, n_c))
@@ -267,15 +267,47 @@ def figs(folder = "/"):
     suf = ".svg"
 
     #Generate the date using Alex data
-    mat = io.loadmat('HITFA_n16.mat')
-    spe_d = mat['n16_3seg']['FAs'][0][0]
-    sen_d = mat['n16_3seg']['HITs'][0][0]
+    spe_d, sen_d = (np.array([[ 0.24270313,  0.02321038,  0.02952344],
+                              [ 0.67715263,  0.49399997,  0.08506709],
+                              [ 0.46347041,  0.13583542,  0.01      ],
+                              [ 0.45477764,  0.1491837 ,  0.0196239 ],
+                              [ 0.53858297,  0.01934524,  0.03432847],
+                              [ 0.39725003,  0.06857843,  0.01811475],
+                              [ 0.71186415,  0.26831071,  0.09960139],
+                              [ 0.4409525 ,  0.04170245,  0.01      ],
+                              [ 0.60690629,  0.15216989,  0.01125   ],
+                              [ 0.61278915,  0.23771008,  0.01325445],
+                              [ 0.8452229 ,  0.40754238,  0.02766234],
+                              [ 0.50867757,  0.09043924,  0.01      ],
+                              [ 0.66107535,  0.30309348,  0.02191489],
+                              [ 0.7353784 ,  0.22671009,  0.03066106],
+                              [ 0.59259021,  0.52808894,  0.1734353 ],
+                              [ 0.56883472,  0.08478361,  0.06293826]]),
+                    np.array([[ 0.51334301,  0.26184022,  0.03030197],
+                              [ 0.9002687 ,  0.87589243,  0.42867166],
+                              [ 0.66978751,  0.4384674 ,  0.32985439],
+                              [ 0.5532464 ,  0.36577512,  0.24859649],
+                              [ 0.76743038,  0.6130325 ,  0.27673233],
+                              [ 0.27167399,  0.39710021,  0.21655621],
+                              [ 0.90162076,  0.8270338 ,  0.33253254],
+                              [ 0.80777079,  0.28147854,  0.18760082],
+                              [ 0.78770642,  0.49981493,  0.25967387],
+                              [ 0.86687442,  0.60804062,  0.08551724],
+                              [ 0.92686771,  0.75689618,  0.40398841],
+                              [ 0.66570871,  0.66018232,  0.40683147],
+                              [ 0.67863222,  0.72087083,  0.09833542],
+                              [ 0.77517302,  0.71261951,  0.45038869],
+                              [ 0.7926511 ,  0.64479712,  0.74534648],
+                              [ 0.81812082,  0.76501369,  0.06303619]]))
     fig_spesen(1-spe_d, sen_d, "fig_data" + suf)
     fig_roc(1-spe_d, sen_d, "fig_data_roc" + suf)
 
+    m_spe_d = np.mean(spe_d, axis=0)
+    m_sen_d = np.mean(sen_d, axis=0)
+
     #Generate the subplot of the models
-    init_motiv = [0, 2, 2]
-    rew_motiv = [False, True, False]
+    init_motiv = [0, 2]
+    rew_motiv = [False, True]
     for i, c_motiv in enumerate(init_motiv):
         for j in range(repetition):
             stim = stimulus(n_trials, 0.5)
@@ -283,3 +315,7 @@ def figs(folder = "/"):
             spe[j], sen[j] = analysis(rec_action, stim, n_c)
         fig_spesen(spe, sen, folder + "fig_model" + str(c_motiv) + str(int(rew_motiv[i])) + suf)
         fig_roc(spe, sen, folder + "fig_roc" + str(c_motiv) + str(int(rew_motiv[i])) + suf)
+
+
+
+

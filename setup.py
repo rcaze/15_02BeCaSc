@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='motivBCS2015',
-      version='0.1',
+      version='0.2',
       description='Code used to generate Figure.3 of our article',
       url='http://github.com/rcaze/motivBCS2015',
       author='Romain Caze',
