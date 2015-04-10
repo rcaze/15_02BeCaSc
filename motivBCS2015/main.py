@@ -307,14 +307,22 @@ def figs(folder="", Qinit=0, nrep=15):
 
     #Generate the subplot of the models
     init_motiv = [0, 2]
-    rew_motiv = [False, True]
+    rew_motiv = [False, False]
     for i, c_motiv in enumerate(init_motiv):
         for j in range(repetition):
             stim = stimulus(n_trials, 0.5)
             rec_q, rec_action, rec_reward, rec_thirst[j] = testbed(stim, q_init, learning, c_motiv, rew_motiv[i])
             spe[j], sen[j] = analysis(rec_action, stim, n_c)
-        fig_spesen(spe, sen, folder + "fig_model" + str(c_motiv) + str(int(rew_motiv[i])) + suf)
-        fig_roc(spe, sen, folder + "fig_roc" + str(c_motiv) + str(int(rew_motiv[i])) + suf)
+        spe_mod = np.mean(spe, axis=0)
+        sen_mod = np.mean(sen, axis=0)
+        #print m_spe_d, 1-spe_mod
+        #print m_sen_d, sen_mod
+        sen_sc = np.linalg.norm(m_spe_d - (1-spe_mod))
+        spe_sc = np.linalg.norm(m_sen_d - sen_mod)
+        print sen_sc + spe_sc
+
+        fig_spesen(spe, sen, folder + "fig_mod_%d_Qinit%d%s" %(c_motiv,Qinit,suf))
+        fig_roc(spe, sen, folder + "fig_roc_%d_Qinit%d%s" %(c_motiv,Qinit,suf))
 
 
 
