@@ -13,3 +13,5 @@
 # Ignore the swap file from vim
 *.swp
 
+build/
+*~
