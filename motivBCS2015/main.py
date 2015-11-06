@@ -12,10 +12,13 @@ def stimulus(duration, probability):
     return np.random.binomial(1, probability, (duration,))
 
 
-def motive_curve(init_val, n_trials):
+def motive_curve(init_val, n_trials, div=15.):
     """Define the motivation curve as a linear curve with 0 in the middle.
     This is to scale the evolution of M given the number of trials."""
-    slope = init_val/float((n_trials-1)/2.)
+    if div is None:
+        div = float((n_trials-1)/2.)
+    slope = init_val/div
+    print n_trials, div
     return [init_val - i*slope for i in range(n_trials)]
 
 
@@ -85,7 +88,7 @@ def set_qnext(qprev, reward, alpha=0.1):
     return qprev + alpha * (reward - qprev)
 
 
-def softmax(qval=[0.5, 0.9], temp=2):
+def softmax(qval=[0.5, 0.9], temp=1):
     """
     Generate a softmax choice given a Q-value and a temperature parameter
 
@@ -114,7 +117,7 @@ def softmax(qval=[0.5, 0.9], temp=2):
 
 
 def testbed(states, q_init=np.zeros((2, 2)), learning=True,
-            init_motiv=1, rew_motiv=False):
+            init_motiv=1, rew_motiv=False, n_trials=None):
     """
     Launch a testbed determined by the obs array for an agent with one or two
     fix or plastic learning rates
@@ -133,9 +136,14 @@ def testbed(states, q_init=np.zeros((2, 2)), learning=True,
     rec_reward: array
          recording the learning rates
     """
-    n_trials = len(states)
-    # Generate the evolution of the first given the number of positive stimulus
-    thirst = motive_curve(init_motiv, np.sum(states))
+    if n_trials is None:
+        n_trials = len(states)
+        # Generate the evolution of the first given the number of pos stimulus
+        thirst = motive_curve(init_motiv, np.sum(states))
+        flg = 0
+    else:
+        thirst = motive_curve(init_motiv, n_trials)
+        flg = 1
 
     rec_q = np.zeros((n_trials, 2, 2), np.float)
     rec_action = np.zeros(n_trials, np.int)
@@ -165,6 +173,8 @@ def testbed(states, q_init=np.zeros((2, 2)), learning=True,
                 th_evol += 1
             else:
                 reward = 0
+                if flg:
+                    th_evol += 1
         else:
             if action == 1:
                 reward = -1
@@ -221,6 +231,7 @@ def fig_spesen(spe, sen, fname='fig_model.png'):
     ax.bar(np.arange(1, 4) - width/2., fa_rate,
            width, yerr=fa_err, color='#f46f80', label='FA rate')
     plt.xlim(0, 4)
+    plt.ylim(0, 0.8)
     plt.ylabel("Response Rate")
     plt.xlabel(r'Session Start $\rightarrow$ Session End')
     ax.set_xticks(range(1, 4), ["Initial", "Middle", "Final"])
@@ -269,7 +280,7 @@ def figs(folder="", Qinit=0, nrep=15):
     q_init = np.array([[0, -Qinit],
                        [0, Qinit]], dtype=np.float)
     n_c = 3
-    n_trials = 150
+    n_trials = 100
     learning = True
     # Choose the figures format
     suf = ".png"
@@ -320,15 +331,16 @@ def figs(folder="", Qinit=0, nrep=15):
     m_sen_d = np.mean(sen_d, axis=0)
 
     # Generate the subplot of the models
-    init_motiv = [0, 2]
-    rew_motiv = [False, False]
+    init_motiv = np.arange(0, 1, 0.5)
+    rew_motiv = [False for i in init_motiv]
     for i, c_motiv in enumerate(init_motiv):
         for j in range(repetition):
             stim = stimulus(n_trials, 0.5)
             rec_q, rec_action, rec_reward, rec_thirst[j] = testbed(stim, q_init,
                                                                    learning,
                                                                    c_motiv,
-                                                                   rew_motiv[i])
+                                                                   rew_motiv[i],
+                                                                   n_trials)
             spe[j], sen[j] = analysis(rec_action, stim, n_c)
         spe_mod = np.mean(spe, axis=0)
         sen_mod = np.mean(sen, axis=0)
@@ -340,3 +352,5 @@ def figs(folder="", Qinit=0, nrep=15):
                    folder + "fig_mod_%d_Qinit%d%s" % (c_motiv, Qinit, suf))
         fig_roc(spe, sen,
                 folder + "fig_roc_%d_Qinit%d%s" % (c_motiv, Qinit, suf))
+
+    plt.close("all")
