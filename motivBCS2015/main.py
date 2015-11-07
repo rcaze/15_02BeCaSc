@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
+from plot_data import adjust_spines
 
 project_name = "15_02BeCaSc"
 
@@ -214,7 +215,7 @@ def analysis(L, G, n_chunks=10):
 
 def fig_spesen(spe, sen, fname='fig_model.png'):
     """Plot the specificity for the early, middle and end section"""
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3, 3))
     fa_rate = 1 - np.mean(spe, axis=0)
     fa_err = np.var(spe, axis=0)
     hits_rate = np.mean(sen, axis=0)
@@ -223,26 +224,34 @@ def fig_spesen(spe, sen, fname='fig_model.png'):
     ax.plot(np.arange(1, 4), fa_rate, color='#ec1d27', linewidth=4)
     width = 0.5
     ax.bar(np.arange(1, 4) - width/2., hits_rate,
-           width, yerr=hits_err, color='#adde76', label='HIT rate')
+           width, yerr=hits_err, color='#adde76', label='HIT rate',
+           error_kw=dict(ecolor='black', lw=2, capsize=5, capthick=2))
+
     ax.bar(np.arange(1, 4) - width/2., fa_rate,
-           width, yerr=fa_err, color='#f46f80', label='FA rate')
+           width, yerr=fa_err, color='#f46f80', label='FA rate',
+           error_kw=dict(ecolor='black', lw=1, capsize=2.5, capthick=1.5))
     plt.xlim(0, 4)
-    plt.ylim(0, 0.8)
+    plt.ylim(0, 0.9)
     plt.ylabel("Response Rate")
     plt.xlabel(r'Session Start $\rightarrow$ Session End')
-    ax.set_xticks(range(1, 4), ["Initial", "Middle", "Final"])
-    ax.legend()
+    ax.set_xticks(range(1, 4))
+    ax.set_xticklabels(["Initial", "Middle", "Final"],  fontsize=10)
+    colors = ("red", "orange", "green")
+    [t.set_color(colors[i]) for i, t in enumerate(plt.gca().get_xticklabels())]
+    adjust_spines(ax, ["bottom", "left"])
+    ax.legend(fontsize=10)
+    plt.tight_layout()
     plt.savefig(fname)
 
 
 def fig_roc(spe, sen, fname='fig_roc.png'):
     """Plot the specificity for the early, middle and end section"""
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3, 3))
     fa_rate = 1 - spe
     hits_rate = sen
     colors = ('#ec1f26', '#f79d0e', '#a6d71e')
     for i in range(3):
-        plt.scatter(fa_rate[:, i], hits_rate[:, i], c=colors[i], s=120)
+        plt.scatter(fa_rate[:, i], hits_rate[:, i], c=colors[i], s=30)
     ax.plot(np.arange(0, 1.1, 0.1), np.arange(0, 1.1, 0.1),
             color='black', linestyle="--")
     ax.set_aspect('equal')
@@ -250,6 +259,7 @@ def fig_roc(spe, sen, fname='fig_roc.png'):
     plt.ylim(0, 1)
     plt.xlabel("FA rate")
     plt.ylabel("Hit rate")
+    plt.tight_layout()
     plt.savefig(fname)
 
 
