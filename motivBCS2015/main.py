@@ -15,10 +15,13 @@ def stimulus(duration, probability):
 def motive_curve(init_val, n_trials, div=15.):
     """Define the motivation curve as a linear curve with 0 in the middle.
     This is to scale the evolution of M given the number of trials."""
+    if not init_val:
+        return [0 for i in range(n_trials)]
+
+    # If there is no slope precised
     if div is None:
         div = float((n_trials-1)/2.)
     slope = init_val/div
-    print n_trials, div
     return [init_val - i*slope for i in range(n_trials)]
 
 
@@ -117,7 +120,7 @@ def softmax(qval=[0.5, 0.9], temp=1):
 
 
 def testbed(states, q_init=np.zeros((2, 2)), learning=True,
-            init_motiv=1, rew_motiv=False, n_trials=None):
+            init_motiv=1, rew_motiv=False):
     """
     Launch a testbed determined by the obs array for an agent with one or two
     fix or plastic learning rates
@@ -136,14 +139,9 @@ def testbed(states, q_init=np.zeros((2, 2)), learning=True,
     rec_reward: array
          recording the learning rates
     """
-    if n_trials is None:
-        n_trials = len(states)
-        # Generate the evolution of the first given the number of pos stimulus
-        thirst = motive_curve(init_motiv, np.sum(states))
-        flg = 0
-    else:
-        thirst = motive_curve(init_motiv, n_trials)
-        flg = 1
+    n_trials = len(states)
+    # Generate the evolution of the first given the number of pos stimulus
+    thirst = motive_curve(init_motiv, np.sum(states))
 
     rec_q = np.zeros((n_trials, 2, 2), np.float)
     rec_action = np.zeros(n_trials, np.int)
@@ -173,8 +171,6 @@ def testbed(states, q_init=np.zeros((2, 2)), learning=True,
                 th_evol += 1
             else:
                 reward = 0
-                if flg:
-                    th_evol += 1
         else:
             if action == 1:
                 reward = -1
@@ -220,9 +216,9 @@ def fig_spesen(spe, sen, fname='fig_model.png'):
     """Plot the specificity for the early, middle and end section"""
     fig, ax = plt.subplots()
     fa_rate = 1 - np.mean(spe, axis=0)
-    fa_err = np.std(spe, axis=0)
+    fa_err = np.var(spe, axis=0)
     hits_rate = np.mean(sen, axis=0)
-    hits_err = np.std(sen, axis=0)
+    hits_err = np.var(sen, axis=0)
     ax.plot(np.arange(1, 4), hits_rate, color='#41b93c', linewidth=4)
     ax.plot(np.arange(1, 4), fa_rate, color='#ec1d27', linewidth=4)
     width = 0.5
@@ -273,7 +269,7 @@ def fig_thirst(thirst, ax=None, color=None, fname='fig_thirst.png'):
     return ax
 
 
-def figs(folder="", Qinit=0, nrep=15):
+def figs(folder="", Qinit=1, nrep=15):
     """Generate all the subplots necessary for to draw figure 3,
     except the experimental data"""
     plt.close('all')
@@ -286,12 +282,10 @@ def figs(folder="", Qinit=0, nrep=15):
     suf = ".png"
 
     # Generate the date using Alex data
-    spe_d, sen_d = (np.array([[0.24270313,  0.02321038,  0.02952344],
-                              [0.67715263,  0.49399997,  0.08506709],
+    spe_d, sen_d = (np.array([[0.67715263,  0.49399997,  0.08506709],
                               [0.46347041,  0.13583542,  0.01],
                               [0.45477764,  0.1491837,  0.0196239],
                               [0.53858297,  0.01934524,  0.03432847],
-                              [0.39725003,  0.06857843,  0.01811475],
                               [0.71186415,  0.26831071,  0.09960139],
                               [0.4409525,  0.04170245,  0.01],
                               [0.60690629,  0.15216989,  0.01125],
@@ -302,12 +296,10 @@ def figs(folder="", Qinit=0, nrep=15):
                               [0.7353784,  0.22671009,  0.03066106],
                               [0.59259021,  0.52808894,  0.1734353],
                               [0.56883472,  0.08478361,  0.06293826]]),
-                    np.array([[0.51334301,  0.26184022,  0.03030197],
-                              [0.9002687,  0.87589243,  0.42867166],
+                    np.array([[0.9002687,  0.87589243,  0.42867166],
                               [0.66978751,  0.4384674,  0.32985439],
                               [0.5532464,  0.36577512,  0.24859649],
                               [0.76743038,  0.6130325,  0.27673233],
-                              [0.27167399,  0.39710021,  0.21655621],
                               [0.90162076,  0.8270338,  0.33253254],
                               [0.80777079,  0.2814785,  0.18760082],
                               [0.78770642,  0.49981493,  0.25967387],
@@ -325,13 +317,12 @@ def figs(folder="", Qinit=0, nrep=15):
     spe = np.zeros((repetition, n_c))
     sen = np.zeros((repetition, n_c))
     rec_thirst = np.zeros((repetition, n_trials))
-    print repetition
 
     m_spe_d = np.mean(spe_d, axis=0)
     m_sen_d = np.mean(sen_d, axis=0)
 
     # Generate the subplot of the models
-    init_motiv = np.arange(0, 1, 0.5)
+    init_motiv = [0, 1]
     rew_motiv = [False for i in init_motiv]
     for i, c_motiv in enumerate(init_motiv):
         for j in range(repetition):
@@ -339,8 +330,7 @@ def figs(folder="", Qinit=0, nrep=15):
             rec_q, rec_action, rec_reward, rec_thirst[j] = testbed(stim, q_init,
                                                                    learning,
                                                                    c_motiv,
-                                                                   rew_motiv[i],
-                                                                   n_trials)
+                                                                   rew_motiv[i])
             spe[j], sen[j] = analysis(rec_action, stim, n_c)
         spe_mod = np.mean(spe, axis=0)
         sen_mod = np.mean(sen, axis=0)
@@ -352,5 +342,7 @@ def figs(folder="", Qinit=0, nrep=15):
                    folder + "fig_mod_%d_Qinit%d%s" % (c_motiv, Qinit, suf))
         fig_roc(spe, sen,
                 folder + "fig_roc_%d_Qinit%d%s" % (c_motiv, Qinit, suf))
-
     plt.close("all")
+
+if __name__ == "__main__":
+    figs()
