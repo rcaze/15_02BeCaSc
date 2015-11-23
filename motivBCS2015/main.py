@@ -213,23 +213,23 @@ def analysis(L, G, n_chunks=10):
     return spe, sen
 
 
-def fig_spesen(spe, sen, fname='fig_model.png'):
+def fig_spesen(spe, sen, fname='fig_model.png', leg=False):
     """Plot the specificity for the early, middle and end section"""
     fig, ax = plt.subplots(figsize=(3, 3))
     fa_rate = 1 - np.mean(spe, axis=0)
     fa_err = np.var(spe, axis=0)
     hits_rate = np.mean(sen, axis=0)
     hits_err = np.var(sen, axis=0)
-    ax.plot(np.arange(1, 4), hits_rate, color='#41b93c', linewidth=4)
-    ax.plot(np.arange(1, 4), fa_rate, color='#ec1d27', linewidth=4)
+    ax.plot(np.arange(1, 4), hits_rate, color='#47bb3a', linewidth=1)
+    ax.plot(np.arange(1, 4), fa_rate, color='#ec1d2a', linewidth=1)
     width = 0.5
     ax.bar(np.arange(1, 4) - width/2., hits_rate,
-           width, yerr=hits_err, color='#adde76', label='HIT rate',
-           error_kw=dict(ecolor='black', lw=2, capsize=5, capthick=2))
+           width, yerr=hits_err, color='#a7db60', label='HIT rate',
+           error_kw=dict(ecolor='black', lw=1, capsize=2.5, capthick=1))
 
     ax.bar(np.arange(1, 4) - width/2., fa_rate,
-           width, yerr=fa_err, color='#f46f80', label='FA rate',
-           error_kw=dict(ecolor='black', lw=1, capsize=2.5, capthick=1.5))
+           width, yerr=fa_err, color='#f2507b', label='FA rate',
+           error_kw=dict(ecolor='black', lw=1, capsize=2.5, capthick=1))
     plt.xlim(0, 4)
     plt.ylim(0, 0.9)
     plt.ylabel("Response Rate")
@@ -239,7 +239,8 @@ def fig_spesen(spe, sen, fname='fig_model.png'):
     colors = ("red", "orange", "green")
     [t.set_color(colors[i]) for i, t in enumerate(plt.gca().get_xticklabels())]
     adjust_spines(ax, ["bottom", "left"])
-    ax.legend(fontsize=10)
+    if leg:
+        ax.legend(fontsize=10)
     plt.tight_layout()
     plt.savefig(fname)
 
@@ -289,7 +290,7 @@ def figs(folder="", Qinit=1, nrep=15):
     n_trials = 100
     learning = True
     # Choose the figures format
-    suf = ".png"
+    suf = ".svg"
 
     # Generate the date using Alex data
     spe_d, sen_d = (np.array([[0.67715263,  0.49399997,  0.08506709],
@@ -322,7 +323,7 @@ def figs(folder="", Qinit=1, nrep=15):
                               [0.77517302,  0.71261951,  0.45038869],
                               [0.7926511,  0.64479712,  0.74534648],
                               [0.81812082,  0.76501369,  0.06303619]]))
-    fig_spesen(1-spe_d, sen_d, "fig_data" + suf)
+    fig_spesen(1-spe_d, sen_d, "fig_data" + suf, leg=True)
     fig_roc(1-spe_d, sen_d, "fig_data_roc" + suf)
 
     repetition = spe_d.shape[0]
