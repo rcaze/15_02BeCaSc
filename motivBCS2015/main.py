@@ -3,9 +3,43 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import copy
-from plot_data import adjust_spines
 
 project_name = "15_02BeCaSc"
+
+def adjust_spines(ax, spines):
+    """
+    removing the spines from a matplotlib graphics.
+    taken from matplotlib gallery anonymous author.
+
+    parameters
+    ----------
+    ax: a matplolib axes object
+        handler of the object to work with
+    spines: list of char
+        location of the spines
+
+    """
+    for loc, spine in ax.spines.iteritems():
+        if loc in spines:
+            pass
+            # print 'skipped'
+            # spine.set_position(('outward',10)) # outward by 10 points
+            # spine.set_smart_bounds(true)
+        else:
+            spine.set_color('none')  # don't draw spine
+            # turn off ticks where there is no spine
+
+    if 'left' in spines:
+        ax.yaxis.set_ticks_position('left')
+    else:
+        # no yaxis ticks
+        ax.yaxis.set_ticks([])
+
+    if 'bottom' in spines:
+        ax.xaxis.set_ticks_position('bottom')
+    else:
+        # no xaxis ticks
+        ax.xaxis.set_ticks([])
 
 
 def stimulus(duration, probability):
@@ -245,10 +279,10 @@ def fig_spesen(spe, sen, fname='fig_model.png', leg=False):
     plt.savefig(fname)
 
 
-def fig_roc(spe, sen, fname='fig_roc.png'):
+def fig_roc(spe, sen, fname=None):
     """Plot the specificity for the early, middle and end section"""
     fig, ax = plt.subplots(figsize=(3, 3))
-    fa_rate = 1 - spe
+    fa_rate =  spe
     hits_rate = sen
     colors = ('#ec1f26', '#f79d0e', '#a6d71e')
     for i in range(3):
@@ -261,7 +295,11 @@ def fig_roc(spe, sen, fname='fig_roc.png'):
     plt.xlabel("FA rate")
     plt.ylabel("Hit rate")
     plt.tight_layout()
-    plt.savefig(fname)
+    adjust_spines(ax, ["bottom","left"])
+    if fname is not None: 
+        plt.savefig(fname)
+    else: 
+        plt.show()
 
 
 def fig_thirst(thirst, ax=None, color=None, fname='fig_thirst.png'):
@@ -355,7 +393,8 @@ def figs(folder="", Qinit=1, nrep=15):
                    folder + "fig_mod_%d_Qinit%d%s" % (c_motiv, Qinit, suf))
         fig_roc(spe, sen,
                 folder + "fig_roc_%d_Qinit%d%s" % (c_motiv, Qinit, suf))
-    plt.close("all")
+    plt.show()  
+    # plt.close("all")
 
 if __name__ == "__main__":
     figs()
